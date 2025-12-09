@@ -81,7 +81,8 @@ public interface IManagedLustreService
         long? squashUid = null,
         long? squashGid = null,
         string? tenant = null,
-        RetryPolicyOptions? retryPolicy = null);
+        RetryPolicyOptions? retryPolicy = null,
+        CancellationToken cancellationToken = default);
 
     Task<string> CreateAutoexportJobAsync(
         string subscription,
