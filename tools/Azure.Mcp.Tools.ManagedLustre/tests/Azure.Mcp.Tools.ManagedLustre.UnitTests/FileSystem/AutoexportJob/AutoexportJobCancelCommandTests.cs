@@ -7,6 +7,7 @@ using System.Net;
 using System.Text.Json;
 using Azure.Mcp.Core.Models.Command;
 using Azure.Mcp.Core.Options;
+using Microsoft.Mcp.Core.Models.Command;
 using Azure.Mcp.Tools.ManagedLustre.Commands.FileSystem.AutoexportJob;
 using Azure.Mcp.Tools.ManagedLustre.Options.FileSystem.AutoexportJob;
 using Azure.Mcp.Tools.ManagedLustre.Services;
@@ -80,10 +81,10 @@ public class AutoexportJobCancelCommandTests
         Assert.NotNull(response.Results);
 
         await _managedLustreService.Received(1).CancelAutoexportJobAsync(
-            _jobName,
-            _fileSystemName,
-            _resourceGroup,
-            _subscription,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
+            Arg.Is(_jobName),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());

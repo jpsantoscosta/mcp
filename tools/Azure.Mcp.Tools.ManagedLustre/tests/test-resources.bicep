@@ -30,6 +30,9 @@ param amlfsSku string = 'AMLFS-Durable-Premium-500'
 @minValue(4)
 param amlfsCapacityTiB int = 4
 
+@description('The client OID to grant access to test resources.')
+param testApplicationOid string = deployer().objectId
+
 var kvCryptoUserRoleDefinitionId = '14b46e9e-c2b7-41b4-b07b-48a6ebf60603'
 
 var userAssignedName = '${baseName}-uai'
@@ -104,7 +107,7 @@ resource getHpcCacheSpObjectId 'Microsoft.Resources/deploymentScripts@2023-08-01
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${userAssignedIdentity.id}': {}
+      '${testApplicationOid}': {}
     }
   }
   properties: {

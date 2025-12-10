@@ -6,6 +6,7 @@ using System.CommandLine.Parsing;
 using System.Net;
 using Azure.Mcp.Core.Models.Command;
 using Azure.Mcp.Core.Options;
+using Microsoft.Mcp.Core.Models.Command;
 using Azure.Mcp.Tools.ManagedLustre.Commands.FileSystem.AutoimportJob;
 using Azure.Mcp.Tools.ManagedLustre.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,9 +70,7 @@ public class AutoimportJobListCommandTests
         };
 
         _managedLustreService.ListAutoimportJobsAsync(
-            Arg.Is(_subscription),
-            Arg.Is(_resourceGroup),
-            Arg.Is(_fileSystemName),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
@@ -91,9 +90,9 @@ public class AutoimportJobListCommandTests
         Assert.NotNull(response.Results);
 
         await _managedLustreService.Received(1).ListAutoimportJobsAsync(
-            _subscription,
-            _resourceGroup,
-            _fileSystemName,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());
@@ -238,9 +237,9 @@ public class AutoimportJobListCommandTests
         // Assert - verify command executed successfully with expected parameters
         Assert.Equal(HttpStatusCode.OK, response.Status);
         await _managedLustreService.Received(1).ListAutoimportJobsAsync(
-            _subscription,
-            _resourceGroup,
-            _fileSystemName,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());

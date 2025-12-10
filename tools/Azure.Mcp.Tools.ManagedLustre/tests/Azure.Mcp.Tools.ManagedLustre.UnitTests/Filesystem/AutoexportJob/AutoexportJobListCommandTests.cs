@@ -7,6 +7,7 @@ using System.Net;
 using System.Text.Json;
 using Azure.Mcp.Core.Models.Command;
 using Azure.Mcp.Core.Options;
+using Microsoft.Mcp.Core.Models.Command;
 using Azure.Mcp.Tools.ManagedLustre.Commands.FileSystem.AutoexportJob;
 using Azure.Mcp.Tools.ManagedLustre.Options.FileSystem.AutoexportJob;
 using Azure.Mcp.Tools.ManagedLustre.Services;
@@ -61,9 +62,7 @@ public class AutoexportJobListCommandTests
         };
 
         _managedLustreService.ListAutoexportJobsAsync(
-            Arg.Is(_subscription),
-            Arg.Is(_resourceGroup),
-            Arg.Is(_fileSystemName),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
@@ -83,9 +82,9 @@ public class AutoexportJobListCommandTests
         Assert.NotNull(response.Results);
 
         await _managedLustreService.Received(1).ListAutoexportJobsAsync(
-            _subscription,
-            _resourceGroup,
-            _fileSystemName,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());
@@ -98,9 +97,7 @@ public class AutoexportJobListCommandTests
         var expectedJobs = new List<Models.AutoexportJob>();
 
         _managedLustreService.ListAutoexportJobsAsync(
-            Arg.Is(_subscription),
-            Arg.Is(_resourceGroup),
-            Arg.Is(_fileSystemName),
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())

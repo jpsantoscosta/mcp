@@ -6,6 +6,7 @@ using System.CommandLine.Parsing;
 using System.Net;
 using Azure.Mcp.Core.Models.Command;
 using Azure.Mcp.Core.Options;
+using Microsoft.Mcp.Core.Models.Command;
 using Azure.Mcp.Tools.ManagedLustre.Commands.FileSystem.AutoexportJob;
 using Azure.Mcp.Tools.ManagedLustre.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,9 +54,12 @@ public class AutoexportJobCreateCommandTests
     {
         // Arrange
         _managedLustreService.CreateAutoexportJobAsync(
-            Arg.Is(_subscription),
-            Arg.Is(_resourceGroup),
-            Arg.Is(_fileSystemName),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
@@ -75,9 +79,12 @@ public class AutoexportJobCreateCommandTests
         Assert.NotNull(response.Results);
 
         await _managedLustreService.Received(1).CreateAutoexportJobAsync(
-            _subscription,
-            _resourceGroup,
-            _fileSystemName,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());
@@ -113,6 +120,9 @@ public class AutoexportJobCreateCommandTests
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
             .ThrowsAsync(new Azure.RequestFailedException(404, "not found"));
@@ -139,6 +149,9 @@ public class AutoexportJobCreateCommandTests
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<string>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
@@ -167,6 +180,9 @@ public class AutoexportJobCreateCommandTests
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>())
             .Returns("autoexport-20250107120000");
@@ -183,9 +199,12 @@ public class AutoexportJobCreateCommandTests
         // Assert - verify command executed successfully with expected parameters
         Assert.Equal(HttpStatusCode.OK, response.Status);
         await _managedLustreService.Received(1).CreateAutoexportJobAsync(
-            _subscription,
-            _resourceGroup,
-            _fileSystemName,
+            Arg.Is(_subscription),
+            Arg.Is(_resourceGroup),
+            Arg.Is(_fileSystemName),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<RetryPolicyOptions?>(),
             Arg.Any<CancellationToken>());
