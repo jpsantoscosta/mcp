@@ -1570,7 +1570,10 @@ azmcp managedlustre fs sku get --subscription <subscription> \
 # ❌ Destructive | ❌ Idempotent | ❌ OpenWorld | ❌ ReadOnly | ❌ Secret | ❌ LocalRequired
 azmcp managedlustre fs autoexport-job create --subscription <subscription> \
                                              --resource-group <resource-group> \
-                                             --filesystem-name <filesystem-name>
+                                             --filesystem-name <filesystem-name> \
+                                             [--job-name <job-name>] \
+                                             [--autoexport-prefix <prefix>] \
+                                             [--admin-status <Enable|Disable>]
 
 # Cancel an autoexport job for an Azure Managed Lustre filesystem
 # ✅ Destructive | ✅ Idempotent | ❌ OpenWorld | ❌ ReadOnly | ❌ Secret | ❌ LocalRequired

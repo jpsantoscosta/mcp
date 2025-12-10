@@ -33,10 +33,20 @@ param amlfsCapacityTiB int = 4
 @description('The client OID to grant access to test resources.')
 param testApplicationOid string = deployer().objectId
 
+@description('The resource ID of the test application user-assigned managed identity. If not provided, a new one will be created.')
+param testApplicationUamiId string = ''
+
 var kvCryptoUserRoleDefinitionId = '14b46e9e-c2b7-41b4-b07b-48a6ebf60603'
 
 var userAssignedName = '${baseName}-uai'
 
+resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = if (empty(testApplicationUamiId)) {
+  name: userAssignedName
+  location: location
+}
+
+// Reference to the UAMI to use - either the provided one or the newly created one
+var uamiResourceId = empty(testApplicationUamiId) ? userAssignedIdentity.id : testApplicationUamiId
 
 resource vnet 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: '${baseName}-vnet'
@@ -107,7 +117,7 @@ resource getHpcCacheSpObjectId 'Microsoft.Resources/deploymentScripts@2023-08-01
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${testApplicationOid}': {}
+      '${uamiResourceId}': {}
     }
   }
   properties: {
@@ -233,12 +243,6 @@ resource amlfs 'Microsoft.StorageCache/amlFilesystems@2024-07-01' = {
   }
 }
 
-resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
-  name: userAssignedName
-  location: location
-}
-
-
 resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
   name: baseName
   location: location
@@ -256,11 +260,11 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
 }
 
 resource keyVaultCryptoUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, 'kv-crypto-user', userAssignedIdentity.id)
+  name: guid(keyVault.id, 'kv-crypto-user', uamiResourceId)
   scope: keyVault
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kvCryptoUserRoleDefinitionId)
-    principalId: userAssignedIdentity.properties.principalId
+    principalId: empty(testApplicationUamiId) ? userAssignedIdentity.properties.principalId : reference(uamiResourceId, '2024-11-30').principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -280,7 +284,7 @@ output HSM_CONTAINER_ID string = dataContainer.id
 output HSM_LOGS_CONTAINER_ID string = loggingContainer.id
 output KEY_VAULT_RESOURCE_ID string = keyVault.id
 output KEY_VAULT_NAME string = keyVault.name
-output USER_ASSIGNED_IDENTITY_RESOURCE_ID string = userAssignedIdentity.id
+output USER_ASSIGNED_IDENTITY_RESOURCE_ID string = uamiResourceId
 output KEY_URI_WITH_VERSION string = keyVaultKey.properties.keyUriWithVersion
 output AMLFS_ID string = amlfs.id
 output AMLFS_SUBNET_ID string = filesystemSubnetId
