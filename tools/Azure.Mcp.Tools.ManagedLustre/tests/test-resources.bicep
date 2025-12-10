@@ -37,6 +37,7 @@ param testApplicationOid string = deployer().objectId
 param testApplicationUamiId string = ''
 
 var kvCryptoUserRoleDefinitionId = '14b46e9e-c2b7-41b4-b07b-48a6ebf60603'
+var directoryReadAllRoleId = '88d8e3e3-8f55-4a1e-953a-9b9898b8876b' // Directory.Read.All
 
 var userAssignedName = '${baseName}-uai'
 
@@ -109,6 +110,84 @@ resource natPublicIp 'Microsoft.Network/publicIPAddresses@2024-07-01' = {
   }
 }
 
+// Get Microsoft Graph Service Principal (well-known app ID)
+resource microsoftGraphSP 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: '${baseName}-get-graph-sp'
+  location: location
+  kind: 'AzurePowerShell'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uamiResourceId}': {}
+    }
+  }
+  properties: {
+    azPowerShellVersion: '11.0'
+    retentionInterval: 'PT1H'
+    scriptContent: '''
+      # Microsoft Graph well-known application ID
+      $graphAppId = '00000003-0000-0000-c000-000000000000'
+      $sp = Get-AzADServicePrincipal -ApplicationId $graphAppId
+      if (-not $sp) {
+        Write-Error "Microsoft Graph service principal not found"
+        exit 1
+      }
+      $DeploymentScriptOutputs = @{}
+      $DeploymentScriptOutputs['objectId'] = $sp.Id
+    '''
+    timeout: 'PT5M'
+    cleanupPreference: 'OnSuccess'
+  }
+}
+
+// Grant Directory.Read.All permission to the managed identity via deployment script
+resource grantGraphPermission 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: '${baseName}-grant-graph-permission'
+  location: location
+  kind: 'AzurePowerShell'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uamiResourceId}': {}
+    }
+  }
+  properties: {
+    azPowerShellVersion: '11.0'
+    retentionInterval: 'PT1H'
+    arguments: '-ManagedIdentityPrincipalId "${empty(testApplicationUamiId) ? userAssignedIdentity.properties.principalId : reference(uamiResourceId, '2024-11-30').principalId}" -GraphSpObjectId "${microsoftGraphSP.properties.outputs.objectId}" -DirectoryReadAllRoleId "${directoryReadAllRoleId}"'
+    scriptContent: '''
+      param(
+        [string]$ManagedIdentityPrincipalId,
+        [string]$GraphSpObjectId,
+        [string]$DirectoryReadAllRoleId
+      )
+      
+      # Check if the app role assignment already exists
+      $existingAssignment = Get-AzADServicePrincipalAppRoleAssignment -ServicePrincipalId $ManagedIdentityPrincipalId -ErrorAction SilentlyContinue |
+        Where-Object { $_.AppRoleId -eq $DirectoryReadAllRoleId -and $_.ResourceId -eq $GraphSpObjectId }
+      
+      if ($existingAssignment) {
+        Write-Host "Directory.Read.All permission already granted"
+      } else {
+        Write-Host "Granting Directory.Read.All permission to managed identity"
+        New-AzADServicePrincipalAppRoleAssignment `
+          -ServicePrincipalId $ManagedIdentityPrincipalId `
+          -ResourceId $GraphSpObjectId `
+          -AppRoleId $DirectoryReadAllRoleId
+        Write-Host "Permission granted successfully"
+      }
+      
+      $DeploymentScriptOutputs = @{}
+      $DeploymentScriptOutputs['status'] = 'completed'
+    '''
+    timeout: 'PT10M'
+    cleanupPreference: 'OnSuccess'
+  }
+  dependsOn: [
+    microsoftGraphSP
+  ]
+}
+
 // Deployment script to get HPC Cache Resource Provider service principal object ID
 resource getHpcCacheSpObjectId 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: '${baseName}-get-hpccache-sp'
@@ -135,6 +214,9 @@ resource getHpcCacheSpObjectId 'Microsoft.Resources/deploymentScripts@2023-08-01
     timeout: 'PT5M'
     cleanupPreference: 'OnSuccess'
   }
+  dependsOn: [
+    grantGraphPermission
+  ]
 }
 
 @minLength(3)
